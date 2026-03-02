@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Flashpoint — AI-powered emergency incident report extraction and analysis." />
+  <title>Flashpoint — Incident Extraction</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header class="header">
+      <h1 class="header__logo">⚡ Flashpoint</h1>
+      <p class="header__tagline">AI-Powered Incident Report Extraction</p>
+    </header>
+
+    <!-- Input -->
+    <section class="input-section">
+      <label class="input-section__label" for="description">Incident Description</label>
+      <textarea
+        id="description"
+        class="textarea"
+        placeholder="At approximately 14:32 on March 1, 2026, a two-alarm structure fire was reported at 742 Evergreen Terrace, Springfield. Engine 7, Engine 12, and Ladder 3 responded to the scene. Upon arrival, crews observed heavy smoke from the second floor with partial roof collapse on the east side. Two civilian injuries were reported — one for smoke inhalation and one for minor burns. Hazards on scene included exposed propane tanks near the garage and downed power lines along the south perimeter. Utilities were secured by 15:10 and the fire was brought under control at 15:47."
+      ></textarea>
+      <button id="extractBtn" class="btn btn--primary" type="button">
+        🔍 Extract Incident Data
+      </button>
+    </section>
+
+    <!-- Error banner -->
+    <div id="errorBanner" class="error-banner">
+      <div class="error-banner__title">⚠ Extraction Failed</div>
+      <div id="errorMessage"></div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <span class="loading__text">Analyzing incident with AI&hellip;</span>
+    </div>
+
+    <!-- Results -->
+    <section id="results" class="results">
+      <h2 class="results__title">Extracted Report</h2>
+      <div id="cardsGrid" class="cards-grid"></div>
+      <button id="downloadBtn" class="btn btn--download" type="button">
+        📄 Download PDF Report
+      </button>
+    </section>
+
+    <footer class="footer">Flashpoint &mdash; Emergency Intelligence Platform</footer>
+  </div>
+
+  <script>
+    (() => {
+      /* ---- DOM refs ---- */
+      const descEl       = document.getElementById('description');
+      const extractBtn   = document.getElementById('extractBtn');
+      const loadingEl    = document.getElementById('loading');
+      const errorBanner  = document.getElementById('errorBanner');
+      const errorMessage = document.getElementById('errorMessage');
+      const resultsEl    = document.getElementById('results');
+      const cardsGrid    = document.getElementById('cardsGrid');
+      const downloadBtn  = document.getElementById('downloadBtn');
+
+      let lastReport = null;       // cache for download
+
+      /* ---- Helpers ---- */
+      const show = (el) => el.classList.add('active');
+      const hide = (el) => el.classList.remove('active');
+
+      function resetUI() {
+        hide(errorBanner);
+        hide(resultsEl);
+        hide(loadingEl);
+        cardsGrid.innerHTML = '';
+        lastReport = null;
+      }
+
+      /* ---- Field display config ---- */
+      const FIELD_LABELS = {
+        location:       'Location',
+        datetime:       'Date / Time',
+        incident_type:  'Incident Type',
+        units_involved: 'Units Involved',
+        injuries:       'Injuries',
+        hazards:        'Hazards Identified',
+        summary:        'Summary',
+      };
+
+      function renderCard(key, value) {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const label = document.createElement('div');
+        label.className = 'card__label';
+        label.textContent = FIELD_LABELS[key] || key;
+
+        const valEl = document.createElement('div');
+        valEl.className = 'card__value';
+
+        if (Array.isArray(value)) {
+          const ul = document.createElement('ul');
+          ul.className = 'card__value--list';
+          value.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          valEl.appendChild(ul);
+        } else {
+          valEl.textContent = value;
+        }
+
+        card.appendChild(label);
+        card.appendChild(valEl);
+        return card;
+      }
+
+      /* ---- Extract ---- */
+      extractBtn.addEventListener('click', async () => {
+        const description = descEl.value.trim();
+        if (!description) {
+          descEl.focus();
+          return;
+        }
+
+        resetUI();
+        show(loadingEl);
+        extractBtn.disabled = true;
+
+        try {
+          const form = new FormData();
+          form.append('description', description);
+
+          const res = await fetch('/extract', { method: 'POST', body: form });
+          const json = await res.json();
+
+          hide(loadingEl);
+
+          if (!res.ok || !json.success) {
+            throw new Error(json.error || `Server returned ${res.status}`);
+          }
+
+          lastReport = json.data;
+
+          /* Render cards in schema order */
+          const order = ['location', 'datetime', 'incident_type', 'units_involved', 'injuries', 'hazards', 'summary'];
+          order.forEach(key => {
+            if (key in lastReport) {
+              cardsGrid.appendChild(renderCard(key, lastReport[key]));
+            }
+          });
+
+          show(resultsEl);
+        } catch (err) {
+          hide(loadingEl);
+          errorMessage.textContent = err.message;
+          show(errorBanner);
+        } finally {
+          extractBtn.disabled = false;
+        }
+      });
+
+      /* ---- Download PDF ---- */
+      downloadBtn.addEventListener('click', async () => {
+        if (!lastReport) return;
+
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = '⏳ Generating PDF…';
+
+        try {
+          const res = await fetch('/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(lastReport),
+          });
+
+          if (!res.ok) {
+            const errJson = await res.json().catch(() => null);
+            throw new Error(errJson?.detail || `Server error ${res.status}`);
+          }
+
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'flashpoint_report.pdf';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          errorMessage.textContent = err.message;
+          show(errorBanner);
+        } finally {
+          downloadBtn.disabled = false;
+          downloadBtn.textContent = '📄 Download PDF Report';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

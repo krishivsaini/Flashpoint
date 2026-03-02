@@ -1,0 +1,286 @@
+/* ============================================================
+   Flashpoint — Emergency Incident Extraction UI
+   Dark navy + orange accent · Inter font · Mobile responsive
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ---- Reset & tokens ---- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary:    #0b1120;
+  --bg-surface:    #111a2e;
+  --bg-card:       #162035;
+  --border-subtle: #1e2d4a;
+  --text-primary:  #e8ecf4;
+  --text-secondary:#8899b4;
+  --accent:        #ff6b2b;
+  --accent-hover:  #ff8a55;
+  --accent-glow:   rgba(255, 107, 43, .25);
+  --danger:        #ff4d4d;
+  --success:       #34d399;
+  --radius:        12px;
+  --transition:    .25s cubic-bezier(.4,0,.2,1);
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Layout ---- */
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+/* ---- Header ---- */
+.header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.header__logo {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent), #ff9966);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header__tagline {
+  color: var(--text-secondary);
+  font-size: .95rem;
+  margin-top: .35rem;
+}
+
+/* ---- Input section ---- */
+.input-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.input-section__label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: .75rem;
+  font-size: .95rem;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 180px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 1rem;
+  font-family: inherit;
+  font-size: .9rem;
+  line-height: 1.65;
+  resize: vertical;
+  transition: border-color var(--transition);
+}
+
+.textarea::placeholder { color: var(--text-secondary); opacity: .6; }
+.textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: .95rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: .75rem 1.75rem;
+  transition: all var(--transition);
+}
+
+.btn--primary {
+  background: linear-gradient(135deg, var(--accent), #e05a20);
+  color: #fff;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+.btn--primary:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.btn--download {
+  background: transparent;
+  border: 1.5px solid var(--success);
+  color: var(--success);
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.btn--download:hover {
+  background: rgba(52, 211, 153, .1);
+  transform: translateY(-1px);
+}
+
+/* ---- Loading overlay ---- */
+.loading {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0;
+}
+
+.loading.active { display: flex; }
+
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading__text {
+  color: var(--text-secondary);
+  font-size: .9rem;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+
+/* ---- Error banner ---- */
+.error-banner {
+  display: none;
+  background: rgba(255, 77, 77, .08);
+  border: 1px solid rgba(255, 77, 77, .3);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  color: var(--danger);
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+.error-banner.active { display: block; }
+
+.error-banner__title {
+  font-weight: 700;
+  margin-bottom: .25rem;
+}
+
+/* ---- Results ---- */
+.results {
+  display: none;
+}
+
+.results.active { display: block; }
+
+.results__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.results__title::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--success);
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 8px rgba(52, 211, 153, .5);
+}
+
+.cards-grid {
+  display: grid;
+  gap: .75rem;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  transition: border-color var(--transition);
+}
+
+.card:hover { border-color: var(--accent); }
+
+.card__label {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--accent);
+  margin-bottom: .35rem;
+}
+
+.card__value {
+  font-size: .95rem;
+  color: var(--text-primary);
+  word-wrap: break-word;
+}
+
+.card__value--list {
+  list-style: none;
+  padding: 0;
+}
+
+.card__value--list li {
+  padding: .2rem 0;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.card__value--list li::before {
+  content: '›';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ---- Footer ---- */
+.footer {
+  text-align: center;
+  padding-top: 3rem;
+  color: var(--text-secondary);
+  font-size: .8rem;
+  opacity: .6;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  .container { padding: 1.25rem 1rem 3rem; }
+  .header__logo { font-size: 1.75rem; }
+  .input-section { padding: 1.25rem; }
+  .textarea { min-height: 140px; }
+}
