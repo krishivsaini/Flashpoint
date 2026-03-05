@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 
 import httpx
@@ -10,8 +11,8 @@ from pydantic import ValidationError
 
 from app.schemas import IncidentReport
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "mistral"
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434") + "/api/generate"
+MODEL = os.getenv("MODEL", "mistral")
 
 
 def _build_prompt(description: str) -> str:

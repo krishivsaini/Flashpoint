@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,6 +8,7 @@
   <title>Flashpoint — Incident Extraction</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
+
 <body>
   <div class="container">
 
@@ -14,16 +16,25 @@
     <header class="header">
       <h1 class="header__logo">⚡ Flashpoint</h1>
       <p class="header__tagline">AI-Powered Incident Report Extraction</p>
+      <!-- Ollama status indicator -->
+      <div id="ollamaStatus" class="ollama-status" aria-live="polite">
+        <span id="statusDot" class="status-dot"></span>
+        <span id="statusText" class="status-text">Checking Ollama…</span>
+      </div>
     </header>
+
+    <!-- Ollama offline warning -->
+    <div id="offlineWarning" class="offline-warning">
+      <strong>⚠ Ollama is offline</strong> — extraction will not work until the
+      local model server is running.<br />
+      <code>ollama serve</code>
+    </div>
 
     <!-- Input -->
     <section class="input-section">
       <label class="input-section__label" for="description">Incident Description</label>
-      <textarea
-        id="description"
-        class="textarea"
-        placeholder="At approximately 14:32 on March 1, 2026, a two-alarm structure fire was reported at 742 Evergreen Terrace, Springfield. Engine 7, Engine 12, and Ladder 3 responded to the scene. Upon arrival, crews observed heavy smoke from the second floor with partial roof collapse on the east side. Two civilian injuries were reported — one for smoke inhalation and one for minor burns. Hazards on scene included exposed propane tanks near the garage and downed power lines along the south perimeter. Utilities were secured by 15:10 and the fire was brought under control at 15:47."
-      ></textarea>
+      <textarea id="description" class="textarea"
+        placeholder="At approximately 14:32 on March 1, 2026, a two-alarm structure fire was reported at 742 Evergreen Terrace, Springfield. Engine 7, Engine 12, and Ladder 3 responded to the scene. Upon arrival, crews observed heavy smoke from the second floor with partial roof collapse on the east side. Two civilian injuries were reported — one for smoke inhalation and one for minor burns. Hazards on scene included exposed propane tanks near the garage and downed power lines along the south perimeter. Utilities were secured by 15:10 and the fire was brought under control at 15:47."></textarea>
       <button id="extractBtn" class="btn btn--primary" type="button">
         🔍 Extract Incident Data
       </button>
@@ -56,14 +67,17 @@
   <script>
     (() => {
       /* ---- DOM refs ---- */
-      const descEl       = document.getElementById('description');
-      const extractBtn   = document.getElementById('extractBtn');
-      const loadingEl    = document.getElementById('loading');
-      const errorBanner  = document.getElementById('errorBanner');
+      const descEl = document.getElementById('description');
+      const extractBtn = document.getElementById('extractBtn');
+      const loadingEl = document.getElementById('loading');
+      const errorBanner = document.getElementById('errorBanner');
       const errorMessage = document.getElementById('errorMessage');
-      const resultsEl    = document.getElementById('results');
-      const cardsGrid    = document.getElementById('cardsGrid');
-      const downloadBtn  = document.getElementById('downloadBtn');
+      const resultsEl = document.getElementById('results');
+      const cardsGrid = document.getElementById('cardsGrid');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const statusDot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+      const offlineWarn = document.getElementById('offlineWarning');
 
       let lastReport = null;       // cache for download
 
@@ -79,15 +93,40 @@
         lastReport = null;
       }
 
+      /* ---- Health check on page load ---- */
+      async function checkHealth() {
+        try {
+          const res = await fetch('/health');
+          const data = await res.json();
+          if (data.ollama) {
+            statusDot.classList.add('status-dot--green');
+            statusDot.classList.remove('status-dot--red');
+            statusText.textContent = 'Ollama connected';
+            offlineWarn.style.display = 'none';
+          } else {
+            statusDot.classList.add('status-dot--red');
+            statusDot.classList.remove('status-dot--green');
+            statusText.textContent = 'Ollama offline';
+            offlineWarn.style.display = 'block';
+          }
+        } catch {
+          statusDot.classList.add('status-dot--red');
+          statusDot.classList.remove('status-dot--green');
+          statusText.textContent = 'Ollama offline';
+          offlineWarn.style.display = 'block';
+        }
+      }
+      checkHealth();
+
       /* ---- Field display config ---- */
       const FIELD_LABELS = {
-        location:       'Location',
-        datetime:       'Date / Time',
-        incident_type:  'Incident Type',
+        location: 'Location',
+        datetime: 'Date / Time',
+        incident_type: 'Incident Type',
         units_involved: 'Units Involved',
-        injuries:       'Injuries',
-        hazards:        'Hazards Identified',
-        summary:        'Summary',
+        injuries: 'Injuries',
+        hazards: 'Hazards Identified',
+        summary: 'Summary',
       };
 
       function renderCard(key, value) {
@@ -203,4 +242,5 @@
     })();
   </script>
 </body>
+
 </html>

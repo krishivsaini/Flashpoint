@@ -47,6 +47,35 @@ class TestIndex:
 
 
 # ---------------------------------------------------------------------------
+# GET /health  — Ollama reachability probe
+# ---------------------------------------------------------------------------
+
+
+class TestHealth:
+    @patch("app.main.httpx.get")
+    def test_health_ollama_ok(self, mock_get: MagicMock) -> None:
+        """When Ollama is reachable, ollama should be True."""
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_get.return_value = mock_resp
+
+        response = client.get("/health")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "ok"
+        assert body["ollama"] is True
+
+    @patch("app.main.httpx.get", side_effect=Exception("connection refused"))
+    def test_health_ollama_down(self, mock_get: MagicMock) -> None:
+        """When Ollama is unreachable, ollama should be False."""
+        response = client.get("/health")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "ok"
+        assert body["ollama"] is False
+
+
+# ---------------------------------------------------------------------------
 # POST /extract  — LLM extraction endpoint
 # ---------------------------------------------------------------------------
 
